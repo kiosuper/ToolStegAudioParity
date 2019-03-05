@@ -4,7 +4,6 @@ Tool steganography to hiding message into audio using Parity method
 Usage:
 
 	Encode:
-	
 		-e: Encode
 		-i: Input file
 		-m: Message file
