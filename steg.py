@@ -24,7 +24,7 @@ def main():
 		m = string_to_bin(message)
 		l_out = []
 
-		#copy 16 bytes header
+		#copy 64 bytes header
 		for i in range(64):
 			l_out.append(l_in[i])
 
