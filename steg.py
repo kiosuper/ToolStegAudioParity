@@ -1,5 +1,7 @@
 import sys
 
+#location to write message
+byte = 0x5000
 
 def main():
 	#message to binary
@@ -25,22 +27,22 @@ def main():
 		l_out = []
 
 		#copy 64 bytes header
-		for i in range(64):
+		for i in range(byte):
 			l_out.append(l_in[i])
 
 		#add length message
 		l_out.append(chr(len(message)))
 
 		#add message
-		for i in range(65, len(l_in)):
-			if (i-65) < len(m): 
+		for i in range(byte+1, len(l_in)):
+			if (i-byte-1) < len(m): 
 				if ord(l_in[i]) % 2 == 0:
-					if m[i-65] == 1:
+					if m[i-byte-1] == 1:
 						l_out.append(chr((ord(l_in[i]) + 1)%256))
 					else:
 						l_out.append(l_in[i])
 				else:
-					if m[i-65] == 0:
+					if m[i-byte-1] == 0:
 						l_out.append(chr((ord(l_in[i]) + 1)%256))
 					else:
 						l_out.append(l_in[i])
@@ -75,8 +77,8 @@ def main():
 		f = open(input_f,'rb')
 		l_in = f.read()
 		l_out = []
-		len_mess = ord(l_in[64]) #check length message
-		for i in range(65, 65+len_mess*8):
+		len_mess = ord(l_in[byte]) #check length message
+		for i in range(byte+1, byte+1+len_mess*8):
 			if ord(l_in[i]) % 2 == 0:
 				l_out.append(0)
 			else:
@@ -85,6 +87,7 @@ def main():
 		st = bin_to_string(l_out)
 		o = open(output_f,'wb')
 		o.write(st)
+		print "Success!!!"
 
 	#Usage:
 	usage = '''Tool steganography to hiding message into audio using Parity method
