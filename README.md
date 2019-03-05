@@ -15,3 +15,5 @@ Usage:
 		-i: Input file
 		-o: Message output file
 		Example: python steg.py -e -i Example1.wav -o message.txt
+		
+------------------------------Unicorn TEAM------------------------------
