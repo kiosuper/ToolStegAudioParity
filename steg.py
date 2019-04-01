@@ -14,28 +14,62 @@ def main():
 				l.append(int(b[i]))
 		return l
 
+
 	#add len message to input file
 	def len_mess_e(len_m, l_out, byte_e):
 		n = hex(len_m)[2:]
 		for i in range(8-len(n)):
-			n = '0'+ n
+			n = '0' + n
 		l = []
 		for i in range(0,len(n),2):
 			s = '0x' + n[i] + n[i+1]
 			l.append(int(s,16))
-
 		for i in range(4):
 			l_out.append(chr(l[i]))
 		return l_out
 
+
+	#check_parity
+	def check_parity_encode(a, b, mess):
+		count = 0
+		a = bin(ord(a))[2:]
+		b = bin(ord(b))[2:]
+		if len(a) < 8:
+			for i in range(8-len(a)):
+				a = '0' + a
+		if len(b) < 8:
+			for i in range(8-len(b)):
+				b ='0' + b
+		a = a+b
+		lsb = a[-1:]
+		for i in a[:-1]:
+			if int(i) == 1:
+				count += 1
+		if count % 2 == 0:	# even parity
+			if mess == 1:	# message embed 1
+				lsb = 1
+			else:			# message embed 0
+				lsb = 0
+		else:				# odd parity
+			if mess == 0:	# message embed 0
+				lsb = 1
+			else:			# message embed 1
+				lsb = 0
+		a = a[:-1] + str(lsb)
+		return chr(int("0b"+a[0:8],2)%256), chr(int("0b"+a[8:],2)%256)
+
+
 	#encode
 	def encode(input_f, output_f, message_f):
+		# read sample
 		f = open(input_f, 'rb')
 		l_in = f.read()
+		# read message
 		file_mess = open(message_f,'rb')
 		message = file_mess.read()
 		m = string_to_bin(message)
-		#Use PIN
+
+		# Use PIN
 		byte_e = raw_input("Enter the PIN: ")
 		while not byte_e.isdigit():
 			print "The PIN is only include digits."
@@ -44,7 +78,7 @@ def main():
 		if byte_e <= 64:
 			byte_e += 64
 		if (len(l_in) - byte_e-1) < len(m):
-			a = (len(l_in)-byte_e-1)/8
+			a = (len(l_in)-byte_e-1)/16
 			print "Message too big. You only hiding %d words."%a
 		else:	
 			l_out = []
@@ -57,20 +91,17 @@ def main():
 			l_out = len_mess_e(len(message), l_out, byte_e)
 
 			#add message
-			for i in range(byte_e+4, len(l_in)):
-				if (i-byte_e-4) < len(m): 
-					if ord(l_in[i]) % 2 == 0:
-						if m[i-byte_e-4] == 1:
-							l_out.append(chr((ord(l_in[i]) + 1)%256))
-						else:
-							l_out.append(l_in[i])
-					else:
-						if m[i-byte_e-4] == 0:
-							l_out.append(chr((ord(l_in[i]) + 1)%256))
-						else:
-							l_out.append(l_in[i])
+			for i in range(byte_e+4, len(l_in), 2):
+				if (i-byte_e-4)/2 < len(m):
+					a, b = check_parity_encode(l_in[i], l_in[i+1], m[(i-byte_e-4)/2])
+					l_out.append(a)
+					l_out.append(b)
 				else:
-					l_out.append(l_in[i])
+					try:
+						l_out.append(l_in[i])
+						l_out.append(l_in[i+1])
+					except:
+						l_out.append(l_in[i])
 
 			#write to output file
 			o = open(output_f, 'wb')
@@ -94,6 +125,7 @@ def main():
 			st+=chr(a[i])
 		return st
 
+
 	#read len message to input file
 	def len_mess_d(l_in, byte_d):
 		l = []
@@ -105,8 +137,29 @@ def main():
 		return int(s,16)
 
 
+	def check_parity_decode(a, b):
+		count = 0
+		a = bin(ord(a))[2:]
+		b = bin(ord(b))[2:]
+		if len(a) < 8:
+			for i in range(8-len(a)):
+				a = '0' + a
+		if len(b) < 8:
+			for i in range(8-len(b)):
+				b ='0' + b
+		a = a+b
+		for i in a:
+			if int(i) == 1:
+				count += 1
+		if count % 2 == 0:
+			return 0
+		else:
+			return 1
+
+
 	#decode
 	def decode(input_f,output_f):
+		# read sample
 		f = open(input_f,'rb')
 		l_in = f.read()
 		l_out = []
@@ -120,12 +173,10 @@ def main():
 			byte_d += 64
 
 		len_mess = len_mess_d(l_in, byte_d) #check length message
+		for i in range(byte_d+4, byte_d+4+len_mess*16,2):
+			a = check_parity_decode(l_in[i], l_in[i+1])
+			l_out.append(a)
 
-		for i in range(byte_d+4, byte_d+4+len_mess*8):
-			if ord(l_in[i]) % 2 == 0:
-				l_out.append(0)
-			else:
-				l_out.append(1)
 		#write to ouput file
 		st = bin_to_string(l_out)
 		o = open(output_f,'wb')
